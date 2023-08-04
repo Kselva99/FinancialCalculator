@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Function used to understand and test monte carlo options pricing method
 def monte_carlo_brownian_motion_model(S_0, K, days_to_maturity, r, sigma, iterations, contract_type):
     T = days_to_maturity / 365
     dt = T / days_to_maturity

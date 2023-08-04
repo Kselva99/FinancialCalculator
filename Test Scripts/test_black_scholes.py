@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import norm
 
+# Function used to understand and test black scholes options pricing method
 def black_scholes_model(S, K, T, r, sigma, contract_type):
     d1 = (np.log(S / K) + ((r + (0.5 * sigma ** 2)) * T)) / (sigma * np.sqrt(T))
     d2 = (np.log(S / K) + ((r - (0.5 * sigma ** 2)) * T)) / (sigma * np.sqrt(T))
