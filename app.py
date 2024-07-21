@@ -144,8 +144,13 @@ elif page == "Options Pricing":
 
         # HTML and CSS for the table and text boxes
         html_content = f"""
+        <style>
+            .disable-svg svg {{
+                display: none;
+            }}
+        </style>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="flex: 1; text-align: center; margin-right: 12px;">
+            <div class="disable-svg" style="flex: 1; text-align: center; margin-right: 12px;">
                 <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
                     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
@@ -153,7 +158,7 @@ elif page == "Options Pricing":
                     </div>
                 </div>
             </div>
-            <div style="flex: 1; text-align: center; margin-left: 12px;">
+            <div class="disable-svg" style="flex: 1; text-align: center; margin-left: 12px;">
                 <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
                     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
