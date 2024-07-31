@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import yfinance as yf
 import datetime as dt
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from statsmodels.tsa.stattools import adfuller, acf, pacf
+from statsmodels.tsa.arima.model import ARIMA
 
 from black_scholes import Black_Scholes_Pricing
 
@@ -33,6 +35,24 @@ st.sidebar.markdown(linkedin_html, unsafe_allow_html=True)
 # Sidebar Navigation
 page = st.sidebar.radio("Navigation", ["Stock Ticker Analysis", "Options Pricing", "Volatility Modeling", "Signal Processing"])
 
+# Function to fetch data and ensure proper indexing
+def load_data(ticker, start_date, end_date):
+    data = yf.download(ticker, start=start_date, end=end_date)
+    if data.empty:
+        raise ValueError(f"No data found for ticker {ticker} from {start_date} to {end_date}.")
+    data.reset_index(inplace=True)
+    data['Date'] = pd.to_datetime(data['Date'])
+    return data
+
+# Function to fetch data from earliest available date to current date
+def load_data_full(ticker):
+    data = yf.download(ticker, period="max")
+    if data.empty:
+        raise ValueError(f"No data found for ticker {ticker}.")
+    data.reset_index(inplace=True)
+    data['Date'] = pd.to_datetime(data['Date'])
+    return data
+
 # Introduction Page
 # if page == "Introduction":
 #     st.title("Introduction")
@@ -61,53 +81,96 @@ if page == "Stock Ticker Analysis":
     if ema_checkbox:
         ema_days = st.sidebar.number_input("Number of Days for EMA", min_value=1, max_value=365, value=30)
 
-    # Fetch Data
-    def load_data(ticker, start_date, end_date):
-        data = yf.download(ticker, start=start_date, end=end_date)
-        data.reset_index(inplace=True)
-        return data
+    # ARIMA Options
+    st.sidebar.markdown("""---""")
+    st.sidebar.subheader("ARIMA Options")
+    steps = st.sidebar.number_input("Steps for Prediction", min_value=1, max_value=365, value=30)
+    window_view = st.sidebar.number_input("Window View (days)", min_value=1, max_value=365, value=30)
 
-    data = load_data(ticker, start_date, end_date)
+    try:
+        data = load_data(ticker, start_date, end_date)
 
-    # Display Today's Prices in a Table
-    st.subheader(f"{ticker} Stock Data for {dt.date.today()}" )
-    today_data = data.iloc[-1]
-    today_df = pd.DataFrame({
-        "Open": [today_data['Open']],
-        "High": [today_data['High']],
-        "Low": [today_data['Low']],
-        "Close": [today_data['Close']],
-        "Adj Close": [today_data['Adj Close']],
-        "Volume": [today_data['Volume']]
-    })
-    st.write(today_df.to_html(index=False), unsafe_allow_html=True)
+        # Display Today's Prices in a Table
+        st.subheader(f"{ticker} Stock Data for {dt.date.today()}" )
+        today_data = data.iloc[-1]
+        today_df = pd.DataFrame({
+            "Open": [today_data['Open']],
+            "High": [today_data['High']],
+            "Low": [today_data['Low']],
+            "Close": [today_data['Close']],
+            "Adj Close": [today_data['Adj Close']],
+            "Volume": [today_data['Volume']]
+        })
+        st.write(today_df.to_html(index=False), unsafe_allow_html=True)
 
-    # Stock Ticker Graph with Moving Averages
-    # st.subheader("Stock Ticker")
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['Date'], y=data[price_info], mode='lines', name=price_info))
+        # Stock Ticker Graph with Moving Averages
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=data['Date'], y=data[price_info], mode='lines', name=price_info))
 
-    if sma_checkbox:
-        data['SMA'] = data[price_info].rolling(window=sma_days).mean()
-        fig.add_trace(go.Scatter(x=data['Date'], y=data['SMA'], mode='lines', name=f"{sma_days}-Day SMA"))
+        if sma_checkbox:
+            data['SMA'] = data[price_info].rolling(window=sma_days).mean()
+            fig.add_trace(go.Scatter(x=data['Date'], y=data['SMA'], mode='lines', name=f"{sma_days}-Day SMA"))
 
-    if ema_checkbox:
-        data['EMA'] = data[price_info].ewm(span=ema_days, adjust=False).mean()
-        fig.add_trace(go.Scatter(x=data['Date'], y=data['EMA'], mode='lines', name=f"{ema_days}-Day EMA"))
+        if ema_checkbox:
+            data['EMA'] = data[price_info].ewm(span=ema_days, adjust=False).mean()
+            fig.add_trace(go.Scatter(x=data['Date'], y=data['EMA'], mode='lines', name=f"{ema_days}-Day EMA"))
 
-    fig.update_layout(title=f"{ticker} {price_info} Price",
-                      xaxis_title="Date",
-                      yaxis_title=price_info,
-                      legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5))
+        fig.update_layout(title=f"{ticker} {price_info} Price",
+                          xaxis_title="Date",
+                          yaxis_title=price_info,
+                          legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5))
 
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Placeholder for ARMA and ARIMA Models
-    st.subheader("ARMA Model")
-    st.write("To be filled in later.")
+        # Fetch full data for ARIMA model
+        data_full = load_data_full(ticker)
 
-    st.subheader("ARIMA Model")
-    st.write("To be filled in later.")
+        # Filter data for the window view
+        view_start_date = data_full['Date'].iloc[-1] - pd.Timedelta(days=window_view)
+        data_view = data_full[data_full['Date'] >= view_start_date]
+
+        # ARIMA Model Section
+        st.subheader("ARIMA Model")
+        try:
+            # Check for stationarity using ADF test
+            result = adfuller(data_full['Adj Close'])
+            st.write(f"ADF Statistic: {result[0]}")
+            st.write(f"p-value: {result[1]}")
+            for key, value in result[4].items():
+                st.write(f'Critical Values {key}: {value}')
+
+            d = 0
+            if result[1] > 0.05:
+                st.write("The series is non-stationary and needs differencing.")
+                d = 1
+
+            # Determine p and q using PACF and ACF
+            lag_acf = acf(data_full['Adj Close'].diff(d).dropna(), nlags=20)
+            lag_pacf = pacf(data_full['Adj Close'].diff(d).dropna(), nlags=20, method='ols')
+
+            p = np.argmax(lag_pacf < 0.05)
+            q = np.argmax(lag_acf < 0.05)
+
+            st.write(f"Suggested p value: {p}")
+            st.write(f"Suggested d value: {d}")
+            st.write(f"Suggested q value: {q}")
+
+            model_arima = ARIMA(data_full['Adj Close'], order=(p, d, q)).fit()
+            arima_predictions = model_arima.forecast(steps=steps)
+
+            # Plot ARIMA Predictions
+            arima_fig = go.Figure()
+            arima_fig.add_trace(go.Scatter(x=data_view['Date'], y=data_view['Adj Close'], mode='lines', name='Actual'))
+            arima_fig.add_trace(go.Scatter(x=pd.date_range(start=data_full['Date'].iloc[-1], periods=steps + 1, freq='B')[1:], y=arima_predictions, mode='lines', name='ARIMA Predictions'))
+            arima_fig.update_layout(title="ARIMA Model Predictions", xaxis_title="Date", yaxis_title="Price", legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5))
+            st.plotly_chart(arima_fig, use_container_width=True)
+        except Exception as e:
+            st.write(f"Error in ARIMA model: {e}")
+
+    except ValueError as e:
+        st.error(e)
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
 
 # Options Pricing Page
 elif page == "Options Pricing":
