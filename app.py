@@ -9,7 +9,6 @@ from statsmodels.tsa.arima.model import ARIMA
 
 from black_scholes import Black_Scholes_Pricing
 
-# https://blackschole.streamlit.app
 # python -m streamlit run app.py
 
 # Page Setup
