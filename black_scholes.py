@@ -34,21 +34,44 @@ class Black_Scholes_Pricing(Option_Pricing):
             self.delta = norm.cdf(self.d1)
         elif(self.contract_type == 'put'):
             self.delta = norm.cdf(self.d1) - 1
+        return self.delta
 
     def calc_gamma(self):
         self.gamma = norm.pdf(self.d1) / (self.S * self.sigma * (self.T ** 0.5))
+        return self.gamma
 
     def calc_theta(self):
         if(self.contract_type == 'call'):
             self.theta = ((-self.S * self.sigma * norm.pdf(self.d1)) / (2 * (self.T ** 0.5))) - (self.r * self.K * np.exp(-self.r * self.T) * norm.cdf(self.d2))
         elif(self.contract_type == 'put'):
             self.theta = ((-self.S * self.sigma * norm.pdf(self.d1)) / (2 * (self.T ** 0.5))) + (self.r * self.K * np.exp(-self.r * self.T) * norm.cdf(-self.d2))
+        return self.theta
 
     def calc_vega(self):
         self.vega = self.S * (self.T ** 0.5) * norm.pdf(self.d1)
+        return self.vega
 
     def calc_rho(self):
         if(self.contract_type == 'call'):
             self.rho = self.K * self.T * np.exp(-self.r * self.T) * norm.cdf(self.d2)
         elif(self.contract_type == 'put'):
             self.rho = -self.K * self.T * np.exp(-self.r * self.T) * norm.cdf(-self.d2)
+        return self.rho
+
+    def gen_heatmap(self, min_spot, max_spot, min_vol, max_vol, gran=10):
+        heat_spots = np.linspace(min_spot, max_spot, gran)
+        heat_vols = np.linspace(min_vol, max_vol, gran)
+
+        heatmap = np.zeros((gran, gran))
+
+        for i in range(gran):
+            cur_vol = heat_vols[i]
+            tmp_d1 = (np.log(heat_spots / self.K) + ((self.r - self.q + (0.5 * (cur_vol ** 2))) * self.T)) / (cur_vol * (self.T ** 0.5))
+            tmp_d2 = (np.log(heat_spots / self.K) + ((self.r - self.q - (0.5 * (cur_vol ** 2))) * self.T)) / (cur_vol * (self.T ** 0.5))
+            
+            if(self.contract_type == 'call'):
+                heatmap[i] = (heat_spots * np.exp(-self.q * self.T) * norm.cdf(tmp_d1)) - (self.K * np.exp(-self.r * self.T) * norm.cdf(tmp_d2))
+            elif(self.contract_type == 'put'):
+                heatmap[i] = (self.K * np.exp(-self.r * self.T) * norm.cdf(-tmp_d2)) - (heat_spots * np.exp(-self.q * self.T) * norm.cdf(-tmp_d1))
+
+        return heatmap, heat_spots, heat_vols
