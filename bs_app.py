@@ -70,6 +70,11 @@ put_greek_df = pd.DataFrame({
 
 # HTML and CSS for the text boxes
 call_box_html = f"""
+<style>
+    .disable-svg svg {{
+        display: none;
+    }}
+</style>
 <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
     <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
@@ -79,6 +84,11 @@ call_box_html = f"""
 """
 
 put_box_html = f"""
+<style>
+    .disable-svg svg {{
+        display: none;
+    }}
+</style>
 <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
     <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
