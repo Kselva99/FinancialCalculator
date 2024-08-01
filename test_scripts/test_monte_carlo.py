@@ -34,7 +34,7 @@ def monte_carlo_brownian_motion_model(S_0, K, days_to_maturity, r, sigma, iterat
 
 S = 100
 K = 110
-days = 180
+days = 365
 r = 0.05
 sigma = 0.25
 iterations = 100
