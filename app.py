@@ -231,11 +231,20 @@ elif page == "Monte-Carlo":
     </div>
     """
 
+    # Generate ITM Probabilities
+    call_itm_prob = np.mean(sim[-1] > strike_price)
+    put_itm_prob = np.mean(sim[-1] < strike_price)
+
+    call_itm_df = pd.DataFrame({"Probability of Call Expiring ITM": ["{:.2%}".format(call_itm_prob)]})
+    put_itm_df = pd.DataFrame({"Probability of Put Expiring ITM": ["{:.2%}".format(put_itm_prob)]})
+
     # Display the figure and prices side by side
     col1, col2 = st.columns(2)
     with col1:
         st.write(call_box_html, unsafe_allow_html=True)
+        st.dataframe(call_itm_df, use_container_width=True)
     with col2:
         st.write(put_box_html, unsafe_allow_html=True)
+        st.dataframe(put_itm_df, use_container_width=True)
 
     st.plotly_chart(fig_sim, use_container_width=True)
