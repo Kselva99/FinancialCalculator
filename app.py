@@ -29,7 +29,7 @@ linkedin_html = f"""
 st.sidebar.markdown(linkedin_html, unsafe_allow_html=True)
 
 # Sidebar Navigation
-page = st.sidebar.radio("Pricers", ["Black-Scholes Model", "Monte-Carlo Simulation", "Binomial Model", "Trinomial Model"])
+page = st.sidebar.selectbox("Pricers", ["Black-Scholes Model", "Monte-Carlo Simulation", "Binomial Model", "Trinomial Model"], index=0)
 
 # Black Scholes Page
 if page == "Black-Scholes Model":
