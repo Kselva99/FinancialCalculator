@@ -27,10 +27,10 @@ linkedin_html = f"""
 st.sidebar.markdown(linkedin_html, unsafe_allow_html=True)
 
 # Sidebar Navigation
-page = st.sidebar.radio("Models", ["Black-Scholes", "Monte-Carlo"])
+page = st.sidebar.radio("Pricers", ["Black-Scholes Model", "Monte-Carlo Simulation"])
 
 # Black Scholes Page
-if page == "Black-Scholes":
+if page == "Black-Scholes Model":
     st.title("Black-Scholes Model")
 
     # Sidebar Inputs
@@ -163,7 +163,7 @@ if page == "Black-Scholes":
 
 
 # Monte-Carlo Page
-elif page == "Monte-Carlo":
+elif page == "Monte-Carlo Simulation":
     st.title("Monte-Carlo Pricer (Brownian Motion)")
 
     # Sidebar Inputs
