@@ -5,6 +5,7 @@ import numpy as np
 
 from black_scholes import Black_Scholes_Pricing
 from monte_carlo import Monte_Carlo_Pricing
+from binomial import Binomial_Pricing
 
 # Page Setup
 st.set_page_config(
@@ -27,7 +28,7 @@ linkedin_html = f"""
 st.sidebar.markdown(linkedin_html, unsafe_allow_html=True)
 
 # Sidebar Navigation
-page = st.sidebar.radio("Pricers", ["Black-Scholes Model", "Monte-Carlo Simulation"])
+page = st.sidebar.radio("Pricers", ["Black-Scholes Model", "Monte-Carlo Simulation", "Binomial Model"])
 
 # Black Scholes Page
 if page == "Black-Scholes Model":
@@ -248,3 +249,106 @@ elif page == "Monte-Carlo Simulation":
         st.dataframe(put_itm_df, use_container_width=True)
 
     st.plotly_chart(fig_sim, use_container_width=True)
+
+# Binomial Model
+elif page == "Binomial Model":
+    st.title("Binomial Pricing Model")
+
+    # Sidebar Inputs
+    st.sidebar.markdown("""---""")
+    st.sidebar.subheader("Binomial Model Inputs")
+    spot_price = st.sidebar.number_input("Spot Price (S)", value=100.00, format="%.2f", min_value=0.00)
+    strike_price = st.sidebar.number_input("Strike Price (K)", value=110.00, format="%.2f", min_value=0.00)
+    days_to_maturity = st.sidebar.number_input("Days to Maturity (t)", value=365, format="%d", min_value=0)
+    risk_free_rate = st.sidebar.number_input("Risk-Free Interest Rate (r)", value=0.05, format="%.2f", min_value=0.00)
+    volatility = st.sidebar.number_input("Volatility (σ)", value=0.25, format="%.2f")
+    steps = st.sidebar.number_input("Number of Steps", value=10, format="%d", min_value=1)
+
+    # Calculate call and put option prices
+    option = Binomial_Pricing(spot_price, strike_price, days_to_maturity, risk_free_rate, volatility, steps)
+
+    call_price = option.call_price
+    put_price = option.put_price
+
+    # Generate the binomial tree plot
+    bin_fig = go.Figure()
+
+    for i in range(steps + 1):
+        for j in range(i + 1):
+            if i > 0 and option.ST[i - 1, j] != 0:  # Avoid adding edges that go down to 0
+                bin_fig.add_trace(go.Scatter(
+                    x=[i - 1, i],
+                    y=[option.ST[i - 1, j], option.ST[i, j]],
+                    mode='lines',
+                    line=dict(color='blue', width=2),
+                    showlegend=False
+                ))
+
+            if i > 0 and j > 0 and option.ST[i - 1, j - 1] != 0:  # Avoid adding edges that go down to 0
+                bin_fig.add_trace(go.Scatter(
+                    x=[i - 1, i],
+                    y=[option.ST[i - 1, j - 1], option.ST[i, j]],
+                    mode='lines',
+                    line=dict(color='blue', width=2),
+                    showlegend=False
+                ))
+
+    # Add markers after lines to ensure they are on top
+    for i in range(steps + 1):
+        for j in range(i + 1):
+            bin_fig.add_trace(go.Scatter(
+                x=[i],
+                y=[option.ST[i, j]],
+                mode='markers',
+                text=[f'{option.ST[i, j]:.2f}'],
+                textposition='top center',
+                marker=dict(size=10),
+                showlegend=False
+            ))
+
+    bin_fig.update_layout(
+        title=dict(text="Binomial Pricing Tree", x=0.5, xanchor='center', font=dict(size=24)),
+        xaxis_title="Steps",
+        yaxis_title="Price",
+        showlegend=False,
+        height=600,
+        width=800
+    )
+
+    # HTML and CSS for the text boxes
+    call_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
+        </div>
+    </div>
+    """
+
+    put_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
+        </div>
+    </div>
+    """
+
+    # Display the prices and tree plot
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(call_box_html, unsafe_allow_html=True)
+    with col2:
+        st.write(put_box_html, unsafe_allow_html=True)
+
+    st.plotly_chart(bin_fig, use_container_width=True)
