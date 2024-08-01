@@ -1,5 +1,4 @@
 import numpy as np
-import plotly.graph_objects as go
 from opt_pricing import Option_Pricing
 
 class Binomial_Pricing(Option_Pricing):
