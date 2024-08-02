@@ -84,8 +84,8 @@ if page == "Black-Scholes Model":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
         </div>
@@ -98,8 +98,8 @@ if page == "Black-Scholes Model":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
         </div>
@@ -178,6 +178,11 @@ elif page == "Monte-Carlo Simulation":
     volatility = st.sidebar.number_input("Volatility (σ)", value=0.25, format="%.2f")
     iterations = st.sidebar.number_input("Number of Iterations", value=100, format="%d", min_value=1)
 
+    st.sidebar.markdown("""---""")
+    st.sidebar.subheader("VaR Inputs")
+    format_var = st.sidebar.radio("Format", ["Dollar Amount", "Percentage"], index=0)
+    confidence_level = st.sidebar.slider("VaR Confidence Level", value=0.950, format="%.3f", min_value=0.900, max_value=0.999, step=0.001)
+
     # Calculate values for Call and Put prices
     option = Monte_Carlo_Pricing(spot_price, strike_price, days_to_maturity, risk_free_rate, volatility, iterations)
 
@@ -211,8 +216,8 @@ elif page == "Monte-Carlo Simulation":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
         </div>
@@ -225,8 +230,8 @@ elif page == "Monte-Carlo Simulation":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
         </div>
@@ -241,15 +246,116 @@ elif page == "Monte-Carlo Simulation":
     put_itm_df = pd.DataFrame({"Probability of Put Expiring ITM": ["{:.2%}".format(put_itm_prob)]})
 
     # Display the figure and prices side by side
-    col1, col2 = st.columns(2)
-    with col1:
+    col1a, col2a = st.columns(2)
+    with col1a:
         st.write(call_box_html, unsafe_allow_html=True)
         st.dataframe(call_itm_df, use_container_width=True)
-    with col2:
+    with col2a:
         st.write(put_box_html, unsafe_allow_html=True)
         st.dataframe(put_itm_df, use_container_width=True)
 
     st.plotly_chart(fig_sim, use_container_width=True)
+
+    # Calculate VaR and CVaR values
+    if format_var == "Dollar Amount":
+        call_returns = np.sort(sim[-1] - spot_price)
+        put_returns = np.sort(spot_price - sim[-1])
+
+        call_VaR = np.percentile(call_returns, (1 - confidence_level) * 100)
+        put_VaR = np.percentile(put_returns, (1 - confidence_level) * 100)
+
+        call_CVaR = np.mean(call_returns[call_returns <= call_VaR])
+        put_CVaR = np.mean(put_returns[put_returns <= put_VaR])
+
+        call_VaR_sign = "-" if call_VaR < 0 else ""
+        put_VaR_sign = "-" if put_VaR < 0 else ""
+        call_CVaR_sign = "-" if call_CVaR < 0 else ""
+        put_CVaR_sign = "-" if put_CVaR < 0 else ""
+
+        str_call_VaR = f"{call_VaR_sign}${abs(call_VaR):,.2f}"
+        str_put_VaR = f"{put_VaR_sign}${abs(put_VaR):,.2f}"
+        str_call_CVaR = f"{call_CVaR_sign}${abs(call_CVaR):,.2f}"
+        str_put_CVaR = f"{put_CVaR_sign}${abs(put_CVaR):,.2f}"
+
+    elif format_var == "Percentage":
+        call_returns = np.sort((sim[-1] - spot_price) / spot_price)
+        put_returns = np.sort((spot_price - sim[-1]) / spot_price)
+
+        call_VaR = np.percentile(call_returns, (1 - confidence_level) * 100) * 100
+        put_VaR = np.percentile(put_returns, (1 - confidence_level) * 100) * 100
+
+        call_CVaR = np.mean(call_returns[call_returns <= (call_VaR / 100)]) * 100
+        put_CVaR = np.mean(put_returns[put_returns <= (put_VaR / 100)]) * 100
+
+        str_call_VaR = f"{call_VaR:.2f}%"
+        str_put_VaR = f"{put_VaR:.2f}%"
+        str_call_CVaR = f"{call_CVaR:.2f}%"
+        str_put_CVaR = f"{put_CVaR:.2f}%"
+
+    # Create and display text boxes for VaR and CVar
+    call_var_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #EB345E; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 20px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Value at Risk (VaR)</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_call_VaR}</p>
+        </div>
+    </div>
+    """
+
+    put_var_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #EB345E; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 20px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Value at Risk (VaR)</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_put_VaR}</p>
+        </div>
+    </div>
+    """
+
+    call_cvar_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #A434EB; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Conditional Value at Risk (CVaR)</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_call_CVaR}</p>
+        </div>
+    </div>
+    """
+
+    put_cvar_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #A434EB; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Conditional Value at Risk (CVaR)</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_put_CVaR}</p>
+        </div>
+    </div>
+    """
+
+    col1b, col2b = st.columns(2)
+    with col1b:
+        st.write(call_var_box_html, unsafe_allow_html=True)
+        st.write(call_cvar_box_html, unsafe_allow_html=True)
+    with col2b:
+        st.write(put_var_box_html, unsafe_allow_html=True)
+        st.write(put_cvar_box_html, unsafe_allow_html=True)
 
 # Binomial Model
 elif page == "Binomial Model":
@@ -323,8 +429,8 @@ elif page == "Binomial Model":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
         </div>
@@ -337,8 +443,8 @@ elif page == "Binomial Model":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
         </div>
@@ -437,8 +543,8 @@ elif page == "Trinomial Model":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
         </div>
@@ -451,8 +557,8 @@ elif page == "Trinomial Model":
             display: none;
         }}
     </style>
-    <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
+    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
         <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
             <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
         </div>
