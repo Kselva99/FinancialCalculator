@@ -312,7 +312,7 @@ elif page == "Binomial Model":
         xaxis_title="Steps",
         yaxis_title="Price",
         showlegend=False,
-        height=600,
+        height=800,
         width=800
     )
 
@@ -374,87 +374,96 @@ elif page == "Trinomial Model":
     call_price = option.call_price
     put_price = option.put_price
 
-    st.write("Currently being implemented.")
-
     # Generate the trinomial tree plot
-    # trin_fig = go.Figure()
+    trin_fig = go.Figure()
 
-    # for i in range(steps + 1):
-    #     for j in range(2 * i + 1):
-    #         if i > 0 and option.ST[option.steps - i + j, i] != 0:  # Avoid adding edges that go down to 0
-    #             if j > 0:
-    #                 trin_fig.add_trace(go.Scatter(
-    #                     x=[i - 1, i],
-    #                     y=[option.ST[option.steps - i + j - 1, i - 1], option.ST[option.steps - i + j, i]],
-    #                     mode='lines',
-    #                     line=dict(color='blue', width=2),
-    #                     showlegend=False
-    #                 ))
-    #             if j < 2 * i:
-    #                 trin_fig.add_trace(go.Scatter(
-    #                     x=[i - 1, i],
-    #                     y=[option.ST[option.steps - i + j, i - 1], option.ST[option.steps - i + j, i]],
-    #                     mode='lines',
-    #                     line=dict(color='blue', width=2),
-    #                     showlegend=False
-    #                 ))
+    for i in range(steps + 1):
+        for j in range(2 * i + 1):
+            if i > 0:
+                if option.ST[option.steps - i + j, i - 1] != 0 and option.ST[option.steps - i + j - 1, i] != 0:
+                    trin_fig.add_trace(go.Scatter(
+                        x=[i - 1, i],
+                        y=[option.ST[option.steps - i + j, i - 1], option.ST[option.steps - i + j - 1, i]],
+                        mode='lines',
+                        line=dict(color='blue', width=2),
+                        showlegend=False
+                    ))
+                if option.ST[option.steps - i + j, i - 1] != 0 and option.ST[option.steps - i + j + 1, i] != 0:
+                    trin_fig.add_trace(go.Scatter(
+                        x=[i - 1, i],
+                        y=[option.ST[option.steps - i + j, i - 1], option.ST[option.steps - i + j + 1, i]],
+                        mode='lines',
+                        line=dict(color='blue', width=2),
+                        showlegend=False
+                    ))
+                if option.ST[option.steps - i + j, i - 1] != 0 and option.ST[option.steps - i + j, i] != 0:
+                    trin_fig.add_trace(go.Scatter(
+                        x=[i - 1, i],
+                        y=[option.ST[option.steps - i + j, i - 1], option.ST[option.steps - i + j, i]],
+                        mode='lines',
+                        line=dict(color='blue', width=2),
+                        showlegend=False
+                    ))
 
-    # # Add markers after lines to ensure they are on top
-    # for i in range(steps + 1):
-    #     for j in range(2 * i + 1):
-    #         trin_fig.add_trace(go.Scatter(
-    #             x=[i],
-    #             y=[option.ST[option.steps - i + j, i]],
-    #             mode='markers+text',
-    #             text=[f'{option.ST[option.steps - i + j, i]:.2f}'],
-    #             textposition='top center',
-    #             marker=dict(size=10),
-    #             showlegend=False
-    #         ))
+    # Add markers after lines to ensure they are on top
+    for i in range(steps + 1):
+        for j in range(2 * i + 1):
+            if option.ST[option.steps - i + j, i] != 0:
+                trin_fig.add_trace(go.Scatter(
+                    x=[i],
+                    y=[option.ST[option.steps - i + j, i]],
+                    mode='markers',
+                    text=[f'{option.ST[option.steps - i + j, i]:.2f}'],
+                    textposition='top center',
+                    marker=dict(size=10),
+                    showlegend=False
+                ))
 
-    # trin_fig.update_layout(
-    #     title=dict(text="Trinomial Pricing Tree", x=0.5, xanchor='center', font=dict(size=24)),
-    #     xaxis_title="Steps",
-    #     yaxis_title="Price",
-    #     showlegend=False,
-    #     height=600,
-    #     width=800
-    # )
+    trin_fig.update_layout(
+        title=dict(text="Trinomial Pricing Tree", x=0.5, xanchor='center', font=dict(size=24)),
+        xaxis_title="Steps",
+        yaxis_title="Price",
+        xaxis=dict(tickmode='linear', dtick=1, range=[-0.5, steps + 0.5]),
+        yaxis=dict(range=[min(option.ST.flatten()) * 0.9, max(option.ST.flatten()) * 1.1]),
+        showlegend=False,
+        height=800,
+        width=800
+    )
 
-    # # HTML and CSS for the text boxes
-    # call_box_html = f"""
-    # <style>
-    #     .disable-svg svg {{
-    #         display: none;
-    #     }}
-    # </style>
-    # <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-    #     <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
-    #     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-    #         <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
-    #     </div>
-    # </div>
-    # """
+    # HTML and CSS for the text boxes
+    call_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center;">Call Price</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
+        </div>
+    </div>
+    """
 
-    # put_box_html = f"""
-    # <style>
-    #     .disable-svg svg {{
-    #         display: none;
-    #     }}
-    # </style>
-    # <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-    #     <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
-    #     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-    #         <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
-    #     </div>
-    # </div>
-    # """
+    put_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center;">Put Price</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
+        </div>
+    </div>
+    """
 
-    # # Display the prices and tree plot
-    # col1, col2 = st.columns(2)
-    # with col1:
-    #     st.write(call_box_html, unsafe_allow_html=True)
-    # with col2:
-    #     st.write(put_box_html, unsafe_allow_html=True)
+    # Display the prices and tree plot
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(call_box_html, unsafe_allow_html=True)
+    with col2:
+        st.write(put_box_html, unsafe_allow_html=True)
 
-    # st.plotly_chart(trin_fig, use_container_width=True)
+    st.plotly_chart(trin_fig, use_container_width=True)
