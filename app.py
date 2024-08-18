@@ -29,7 +29,24 @@ linkedin_html = f"""
 st.sidebar.markdown(linkedin_html, unsafe_allow_html=True)
 
 # Sidebar Navigation
-page = st.sidebar.selectbox("Pricers", ["Black-Scholes Model", "Monte-Carlo Simulation", "Binomial Model", "Trinomial Model"], index=0)
+page = st.sidebar.selectbox("Models", ["Black-Scholes Model", "Monte-Carlo Simulation", "Binomial Model", "Trinomial Model"], index=0)
+
+def make_text_box(label, value, color, margin_bottom="50"):
+    text_box_html = f"""
+    <style>
+        .disable-svg svg {{
+            display: none;
+        }}
+    </style>
+    <div class="disable-svg" style="border-radius: 15px; background-color: {color}; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: {margin_bottom}px;">
+        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">{label}</h4>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{value}</p>
+        </div>
+    </div>
+    """
+
+    return text_box_html
 
 # Black Scholes Page
 if page == "Black-Scholes Model":
@@ -78,33 +95,8 @@ if page == "Black-Scholes Model":
             })
 
     # HTML and CSS for the text boxes
-    call_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
-        </div>
-    </div>
-    """
-
-    put_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
-        </div>
-    </div>
-    """
+    call_box_html = make_text_box("Call Price", f"${call_price:.2f}", "#5DADE2")
+    put_box_html = make_text_box("Put Price", f"${put_price:.2f}", "#FFA500")
 
     # Generates Heatmaps
     call_grid, call_heat_spots, call_heat_vols = call_option.gen_heatmap(min_spot, max_spot, min_vol, max_vol, gran=granularity)
@@ -210,49 +202,17 @@ elif page == "Monte-Carlo Simulation":
     )
 
     # HTML and CSS for the text boxes
-    call_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
-        </div>
-    </div>
-    """
-
-    put_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
-        </div>
-    </div>
-    """
-
-    # Generate ITM Probabilities
-    call_itm_prob = np.mean(sim[-1] > strike_price)
-    put_itm_prob = np.mean(sim[-1] < strike_price)
-
-    call_itm_df = pd.DataFrame({"Probability of Call Expiring ITM": ["{:.2%}".format(call_itm_prob)]})
-    put_itm_df = pd.DataFrame({"Probability of Put Expiring ITM": ["{:.2%}".format(put_itm_prob)]})
+    call_box_html = make_text_box("Call Price", f"${call_price:.2f}", "#5DADE2")
+    put_box_html = make_text_box("Put Price", f"${put_price:.2f}", "#FFA500")
 
     # Display the figure and prices side by side
     col1a, col2a = st.columns(2)
     with col1a:
         st.write(call_box_html, unsafe_allow_html=True)
-        st.dataframe(call_itm_df, use_container_width=True)
+        # st.dataframe(call_itm_df, use_container_width=True)
     with col2a:
         st.write(put_box_html, unsafe_allow_html=True)
-        st.dataframe(put_itm_df, use_container_width=True)
+        # st.dataframe(put_itm_df, use_container_width=True)
 
     st.plotly_chart(fig_sim, use_container_width=True)
 
@@ -292,68 +252,30 @@ elif page == "Monte-Carlo Simulation":
         str_call_CVaR = f"{call_CVaR:.2f}%"
         str_put_CVaR = f"{put_CVaR:.2f}%"
 
+    # Generate ITM Probabilities
+    call_itm_prob = np.mean(sim[-1] > strike_price)
+    put_itm_prob = np.mean(sim[-1] < strike_price)
+
+    # call_itm_df = pd.DataFrame({"Probability of Call Expiring ITM": ["{:.2%}".format(call_itm_prob)]})
+    # put_itm_df = pd.DataFrame({"Probability of Put Expiring ITM": ["{:.2%}".format(put_itm_prob)]})
+
+    call_itm_html = make_text_box("Probability Call Expires ITM", f"{call_itm_prob:.2%}", "#499140")
+    put_itm_html = make_text_box("Probability Put Expires ITM", f"{put_itm_prob:.2%}", "#499140")
+
     # Create and display text boxes for VaR and CVar
-    call_var_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #EB345E; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 20px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Value at Risk (VaR)</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_call_VaR}</p>
-        </div>
-    </div>
-    """
+    call_var_box_html = make_text_box("Call Value at Risk (VaR)", str_call_VaR, "#EB345E", margin_bottom="20")
+    put_var_box_html = make_text_box("Put Value at Risk (VaR)", str_put_VaR, "#EB345E", margin_bottom="20")
 
-    put_var_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #EB345E; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 20px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Value at Risk (VaR)</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_put_VaR}</p>
-        </div>
-    </div>
-    """
-
-    call_cvar_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #A434EB; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Conditional Value at Risk (CVaR)</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_call_CVaR}</p>
-        </div>
-    </div>
-    """
-
-    put_cvar_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #A434EB; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Conditional Value at Risk (CVaR)</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">{str_put_CVaR}</p>
-        </div>
-    </div>
-    """
+    call_cvar_box_html = make_text_box("Call Conditional Value at Risk (CVaR)", str_call_CVaR, "#A434EB")
+    put_cvar_box_html = make_text_box("Put Conditional Value at Risk (CVaR)", str_put_CVaR, "#A434EB")
 
     col1b, col2b = st.columns(2)
     with col1b:
+        st.write(call_itm_html, unsafe_allow_html=True)
         st.write(call_var_box_html, unsafe_allow_html=True)
         st.write(call_cvar_box_html, unsafe_allow_html=True)
     with col2b:
+        st.write(put_itm_html, unsafe_allow_html=True)
         st.write(put_var_box_html, unsafe_allow_html=True)
         st.write(put_cvar_box_html, unsafe_allow_html=True)
 
@@ -423,33 +345,8 @@ elif page == "Binomial Model":
     )
 
     # HTML and CSS for the text boxes
-    call_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
-        </div>
-    </div>
-    """
-
-    put_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
-        </div>
-    </div>
-    """
+    call_box_html = make_text_box("Call Price", f"${call_price:.2f}", "#5DADE2")
+    put_box_html = make_text_box("Put Price", f"${put_price:.2f}", "#FFA500")
 
     # Display the prices and tree plot
     col1, col2 = st.columns(2)
@@ -537,33 +434,8 @@ elif page == "Trinomial Model":
     )
 
     # HTML and CSS for the text boxes
-    call_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #5DADE2; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Call Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${call_price:.2f}</p>
-        </div>
-    </div>
-    """
-
-    put_box_html = f"""
-    <style>
-        .disable-svg svg {{
-            display: none;
-        }}
-    </style>
-    <div class="disable-svg" style="border-radius: 15px; background-color: #FFA500; padding: 20px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 50px;">
-        <h4 style="font-size: 18px; margin: 0; text-align: center; margin-bottom: -15px; margin-top: -5px;">Put Price</h4>
-        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 32px; font-weight: bold; margin: 0; text-align: center;">${put_price:.2f}</p>
-        </div>
-    </div>
-    """
+    call_box_html = make_text_box("Call Price", f"${call_price:.2f}", "#5DADE2")
+    put_box_html = make_text_box("Put Price", f"${put_price:.2f}", "#FFA500")
 
     # Display the prices and tree plot
     col1, col2 = st.columns(2)
